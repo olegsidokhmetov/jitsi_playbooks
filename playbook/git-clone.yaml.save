@@ -1,0 +1,10 @@
+--- 
+ hosts: jitsi
+ become: true
+  hosts: jitsi
+  tasks: ~
+- 
+  dest: /home/docker-jitsi-meet
+  git: ~
+  name: "Clone Repository"
+  repo: "https://github.com/jitsi/docker-jitsi-meet"

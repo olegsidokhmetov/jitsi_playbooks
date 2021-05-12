@@ -1,0 +1,17 @@
+---
+- hosts: jitsi
+  tasks:
+
+   - name: Create portainer container
+     docker_container:
+       name: portainer
+       image: portainer/portainer-ce
+       state: started
+       recreate: true
+       restart_policy: always
+       published_ports:
+        - "8000:8000"
+        - "9000:9000"
+       volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - portainer_data:/data

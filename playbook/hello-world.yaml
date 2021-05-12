@@ -1,0 +1,16 @@
+---
+- name: Setup Docker
+  hosts: jitsi
+  gather_facts: true
+  become: true
+  tags: [setup]
+
+  tasks:
+    - name: Update the software package repository
+      apt: upgrade=dist update_cache=yes
+      when: ansible_distribution == "Ubuntu"
+
+    - name: Run the hello-world container
+      docker_container:
+        name: hello-world
+        image: library/hello-world

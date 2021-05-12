@@ -1,0 +1,17 @@
+---
+- hosts: jitsi
+  tasks:
+    - name: Creates directory /home/logo/
+      become: true
+      file:
+        path: /home/logo/
+        state: directory
+
+    - name: Download quersystem logo.png
+      become: true
+      get_url:
+        url: https://quersystem.com/wp-content/uploads/2021/02/quersystem-logo.png
+        dest: /home/logo/watermark.png
+
+    - name: Copy file into existing container at docker-jitsi-meet_web_1:/usr/share/jitsi-meet/images/watermark.png
+      shell: docker cp /home/logo/watermark.png docker-jitsi-meet_web_1:/usr/share/jitsi-meet/images/watermark.png

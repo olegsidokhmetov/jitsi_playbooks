@@ -1,0 +1,167 @@
+---
+- hosts: jitsi
+  become: true
+  vars:
+    docker_compose_version: "1.29.1"
+  tasks:
+
+  - name: Update apt cache
+    apt: update_cache=yes cache_valid_time=3600
+
+  - name: Upgrade all apt packages
+    apt: upgrade=dist
+
+  - name: Install dependencies
+    apt:
+      name: "{{ packages }}"
+      state: present
+      update_cache: true
+    vars:
+      packages:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - gnupg-agent
+
+  - name: Add an apt signing key for Docker
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+  - name: Add apt repository for stable version
+    apt_repository:
+      repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+      state: present
+      update_cache: true
+
+  - name: Install Docker
+    apt:
+      name: "{{ packages }}"
+      state: present
+      update_cache: true
+    vars:
+      packages:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+
+  - name: Add remote "root" user to "docker" group
+    user:
+      name: "root"
+      group: docker
+      append: true
+
+  - name: Download docker-compose {{ docker_compose_version }}
+    get_url:
+      url: https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-Linux-x86_64
+      dest: ~/docker-compose
+      mode: '+x'
+
+  - name: Check docker-compose exists
+    stat: path=~/docker-compose
+    register: docker_compose
+
+  - name: Move docker-compose to /usr/local/bin/docker-compose
+    command: mv ~/docker-compose /usr/local/bin/docker-compose
+    when: docker_compose.stat.exists
+
+  - name: Clone Repository docker-jitsi-meet
+    git:
+      repo: https://github.com/jitsi/docker-jitsi-meet
+      dest: /home/docker-jitsi-meet/
+
+  - name: Copy files env.example to .env
+    copy:
+      src: /home/docker-jitsi-meet/env.example
+      dest: /home/docker-jitsi-meet/.env
+      remote_src: true
+
+  - name: Run script gen-passwords.sh on the remote node
+    shell: /home/docker-jitsi-meet/gen-passwords.sh
+
+  - name: Ansible multiple replace in file .env
+    replace:
+      path: "{{ item.path }}"
+      regexp: "{{ item.regexp }}"
+      replace: "{{ item.replace }}"
+    with_items:
+      - {path: '/home/docker-jitsi-meet/.env', regexp: 'HTTP_PORT=8000', replace: 'HTTP_PORT=80'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: 'HTTPS_PORT=8443', replace: 'HTTPS_PORT=443'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: 'UTC', replace: 'Europe/Madrid'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#PUBLIC_URL=https://meet.example.com', replace: 'PUBLIC_URL=https://185.139.68.189'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#DOCKER_HOST_ADDRESS=192.168.1.1', replace: 'DOCKER_HOST_ADDRESS=172.18.0.1'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#ENABLE_LOBBY=1', replace: 'ENABLE_LOBBY=1'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#ENABLE_PREJOIN_PAGE=0', replace: 'ENABLE_PREJOIN_PAGE=1'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#ENABLE_WELCOME_PAGE=1', replace: 'ENABLE_WELCOME_PAGE=1'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#ENABLE_NOISY_MIC_DETECTION=1', replace: 'ENABLE_NOISY_MIC_DETECTION=1'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#ENABLE_AUTH=1', replace: 'ENABLE_AUTH=1'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#ENABLE_GUESTS=1', replace: 'ENABLE_GUESTS=1'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#AUTH_TYPE=internal', replace: 'AUTH_TYPE=internal'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: 'XMPP_MUC_MODULES=', replace: 'XMPP_MUC_MODULES=muc_restrict_rooms_exec'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#ENABLE_HTTP_REDIRECT=1', replace: 'ENABLE_HTTP_REDIRECT=1'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '# ENABLE_HSTS=1', replace: 'ENABLE_HSTS=1'}
+
+  - name: Create multiple directory .jitsi-meet-cfg/{web/letsencrypt,transcripts,prosody/config,prosody/prosody-plugins-custom,jicofo,jvb,jigasi,jibri}
+    file:
+      path: "{{ item }}"
+      state: directory
+    with_items:
+      - '/root/.jitsi-meet-cfg'
+      - '/root/.jitsi-meet-cfg/jibri'
+      - '/root/.jitsi-meet-cfg/jicofo'
+      - '/root/.jitsi-meet-cfg/jigasi'
+      - '/root/.jitsi-meet-cfg/jvb'
+      - '/root/.jitsi-meet-cfg/prosody'
+      - '/root/.jitsi-meet-cfg/prosody/config'
+      - '/root/.jitsi-meet-cfg/prosody/prosody-plugins-custom'
+      - '/root/.jitsi-meet-cfg/transcripts'
+      - '/root/.jitsi-meet-cfg/web'
+      - '/root/.jitsi-meet-cfg/web/letsencrypt'
+
+  - name: Install pip3
+    apt: name=python3-pip state=present
+
+  - name: Pip install Docker SDK for Python and docker-compose
+    pip:
+      name:
+        - docker
+        - docker-compose
+
+  - name: deploy Docker Compose
+    docker_compose:
+      project_src: /home/docker-jitsi-meet
+      files:
+        - docker-compose.yml
+
+  - name: Create Portainer container
+    docker_container:
+      name: portainer
+      image: portainer/portainer-ce
+      state: started
+      recreate: true
+      restart_policy: always
+      published_ports:
+        - "8000:8000"
+        - "9000:9000"
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - portainer_data:/data
+
+  - name: Creates directory /home/logo/
+    become: true
+    file:
+      path: /home/logo/
+      state: directory
+
+  - name: Download quersystem logo.png
+    become: true
+    get_url:
+      url: https://quersystem.com/wp-content/uploads/2021/02/quersystem-logo.png
+      dest: /home/logo/watermark.png
+
+  - name: Copy file into existing container at docker-jitsi-meet_web_1:/usr/share/jitsi-meet/images/watermark.png
+    shell: docker cp /home/logo/watermark.png docker-jitsi-meet_web_1:/usr/share/jitsi-meet/images/watermark.png
+
+  - name: Enter into a running container "docker-jitsi-meet_prosody_1" and run a command
+    command: docker exec docker-jitsi-meet_prosody_1 prosodyctl --config /config/prosody.cfg.lua register Oleg meet.jitsi QUERSYSTEM

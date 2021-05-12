@@ -1,0 +1,12 @@
+---
+- hosts: jitsi
+  tasks:
+  - name: Ansible multiple replace in file .env
+    replace:
+      path: "{{ item.path }}"
+      regexp: "{{ item.regexp }}"
+      replace: "{{ item.replace }}"
+    with_items:
+      - {path: '/home/docker-jitsi-meet/.env', regexp: 'HTTPS_PORT=8443', replace: 'HTTPS_PORT=443'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: 'UTC', replace: 'Europe/Madrid'}
+

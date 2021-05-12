@@ -1,0 +1,7 @@
+---
+- hosts: jitsi
+  tasks:
+      - name: Clone Repository docker-jitsi-meet
+        git:
+            repo: https://github.com/jitsi/docker-jitsi-meet
+            dest: /home/docker-jitsi-meet/

@@ -1,0 +1,8 @@
+---
+- hosts: jitsi
+  tasks:
+  - name: Ansible replace string en file .env
+    replace:
+      path: /home/docker-jitsi-meet/.env
+      regexp: '8000'
+      replace: "80"

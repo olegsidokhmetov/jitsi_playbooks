@@ -1,0 +1,19 @@
+---
+- hosts: jitsi
+  tasks:
+  - name: Create multiple directory .jitsi-meet-cfg/{web/letsencrypt,transcripts,prosody/config,prosody/prosody-plugins-custom,jicofo,jvb,jigasi,jibri}
+    file:
+      path: "{{ item }}"
+      state: directory
+    with_items:
+      - '/root/.jitsi-meet-cfg'
+      - '/root/.jitsi-meet-cfg/jibri'
+      - '/root/.jitsi-meet-cfg/jicofo'
+      - '/root/.jitsi-meet-cfg/jigasi'
+      - '/root/.jitsi-meet-cfg/jvb'
+      - '/root/.jitsi-meet-cfg/prosody'
+      - '/root/.jitsi-meet-cfg/prosody/config'
+      - '/root/.jitsi-meet-cfg/prosody/prosody-plugins-custom'     
+      - '/root/.jitsi-meet-cfg/transcripts'  
+      - '/root/.jitsi-meet-cfg/web'
+      - '/root/.jitsi-meet-cfg/web/letsencrypt'

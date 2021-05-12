@@ -1,0 +1,8 @@
+---
+- hosts: jitsi
+  tasks:
+      - name: Run script on the remote node
+        shell: /home/docker-jitsi-meet/gen-passwords.sh
+
+
+

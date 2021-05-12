@@ -1,0 +1,8 @@
+---
+- hosts: jitsi
+  tasks:
+      - name: Copy files env.example to .env
+        copy:
+            src: /home/docker-jitsi-meet/env.example
+            dest: /home/docker-jitsi-meet/.env
+            remote_src: true

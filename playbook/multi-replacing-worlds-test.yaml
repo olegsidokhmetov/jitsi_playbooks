@@ -1,0 +1,18 @@
+---
+- hosts: jitsi
+  tasks:
+  - name: Ansible multiple replace in file .env
+    replace:
+      path: "{{ item.path }}"
+      regexp: "{{ item.regexp }}"
+      replace: "{{ item.replace }}"
+    with_items:
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '(\s+)#\PUBLIC\_URL\=https\://meet\.example\.com\:8443(\s+.*)?$
+', replace: '\PUBLIC\_URL\=https\://185\.139\.68\.189\'}
+
+  - name: Replace line in file .env
+    lineinfile: 
+      path: /home/docker-jitsi-meet/.env 
+      regexp: '^(.*)#PUBLIC_URL=https://meet.example.com:8443(.*)$'
+      line: 'PUBLIC_URL=https://185.139.68.189'
+      backrefs: yes

@@ -1,0 +1,16 @@
+---
+- hosts: jitsi
+  tasks:
+
+  - name: Ansible multiple replace in file .env
+    replace:
+      path: "{{ item.path }}"
+      regexp: "{{ item.regexp }}"
+      replace: "{{ item.replace }}"
+    with_items:
+      - {path: '/home/docker-jitsi-meet/.env', regexp: 'HTTP_PORT=8000', replace: 'HTTP_PORT=80'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: 'HTTPS_PORT=8443', replace: 'HTTPS_PORT=443'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: 'UTC', replace: 'Europe/Madrid'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: 'XMPP_MUC_MODULES=', replace: 'XMPP_MUC_MODULES=muc_restrict_rooms_exec'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#JVB_ENABLE_APIS=rest,colibri', replace: 'JVB_ENABLE_APIS=rest,colibri'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#PUBLIC_URL=https://meet.example.com:8443', replace: 'PUBLIC_URL=https://185.139.68.189'}

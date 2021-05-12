@@ -1,0 +1,65 @@
+---
+- hosts: jitsi
+  tasks:
+  - name: Replace line in file .env PUBLIC_URL=https://meet.example.com:8443
+    lineinfile:
+      path: /home/docker-jitsi-meet/.env
+      regexp: '^(.*)#PUBLIC_URL=https://meet.example.com:8443(.*)$'
+      line: 'PUBLIC_URL=https://185.139.68.189'
+      backrefs: true
+
+  - name: Replace line in file .env DOCKER_HOST_ADDRESS=192.168.1.1
+    lineinfile:
+      path: /home/docker-jitsi-meet/.env
+      regexp: '^(.*)#DOCKER_HOST_ADDRESS=192.168.1.1(.*)$'
+      line: 'DOCKER_HOST_ADDRESS=172.18.0.1'
+      backrefs: true
+
+  - name: Replace line in file .env ENABLE_LOBBY=1
+    lineinfile:
+      path: /home/docker-jitsi-meet/.env
+      regexp: '^(.*)#ENABLE_LOBBY=1(.*)$'
+      line: 'ENABLE_LOBBY=1'
+      backrefs: true
+
+  - name: Replace line in file .env ENABLE_PREJOIN_PAGE=1
+    lineinfile:
+      path: /home/docker-jitsi-meet/.env
+      regexp: '^(.*)#ENABLE_PREJOIN_PAGE=1(.*)$'
+      line: 'ENABLE_PREJOIN_PAGE=1'
+      backrefs: true
+
+  - name: Replace line in file .env ENABLE_WELCOME_PAGE=1
+    lineinfile:
+      path: /home/docker-jitsi-meet/.env
+      regexp: '^(.*)#ENABLE_WELCOME_PAGE=1(.*)$'
+      line: 'ENABLE_WELCOME_PAGE=1'
+      backrefs: true
+
+  - name: Replace line in file .env ENABLE_NOISY_MIC_DETECTION=1
+    lineinfile:
+      path: /home/docker-jitsi-meet/.env
+      regexp: '^(.*)#ENABLE_NOISY_MIC_DETECTION=1(.*)$'
+      line: 'ENABLE_NOISY_MIC_DETECTION=1'
+      backrefs: true
+
+  - name: Replace line in file .env ENABLE_NOISY_MIC_DETECTION=1
+    lineinfile:
+      path: /home/docker-jitsi-meet/.env
+      regexp: '^(.*)#ENABLE_AUTH=1(.*)$'
+      line: 'ENABLE_AUTH=1'
+      backrefs: true
+
+  - name: Replace line in file .env ENABLE_NOISY_MIC_DETECTION=1
+    lineinfile:
+      path: /home/docker-jitsi-meet/.env
+      regexp: '^(.*)#ENABLE_GUESTS=1(.*)$'
+      line: 'ENABLE_NOISY_MIC_DETECTION=1'
+      backrefs: true
+
+  - name: Replace line in file .env ENABLE_NOISY_MIC_DETECTION=1
+    lineinfile:
+      path: /home/docker-jitsi-meet/.env
+      regexp: '^(.*)#AUTH_TYPE=internal(.*)$'
+      line: 'AUTH_TYPE=internal'
+      backrefs: true

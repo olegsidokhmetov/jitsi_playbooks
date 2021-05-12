@@ -1,0 +1,6 @@
+---
+- hosts: jitsi
+  tasks:
+
+    - name: Enter into a running container and run a command
+      command: docker exec docker-jitsi-meet_prosody_1 prosodyctl --config /config/prosody.cfg.lua register Oleg meet.jitsi QUERSYSTEM

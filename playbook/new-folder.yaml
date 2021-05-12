@@ -1,0 +1,7 @@
+---
+- hosts: jitsi
+  tasks:
+  - name: Creates directory
+    file:
+      path: /root/777
+      state: directory

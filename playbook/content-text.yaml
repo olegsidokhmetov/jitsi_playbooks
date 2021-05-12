@@ -1,0 +1,10 @@
+- hosts: jitsi
+  tasks:
+
+      - name: Ansible write to a file example
+        copy:
+          content: |
+            Content parameter example.
+            Check4.txt will be created after this task is executed.
+          dest: /home/content
+          backup: yes
