@@ -1,0 +1,28 @@
+---
+- hosts: jitsi
+  become: true
+  tasks:
+
+  - name: Download Files docker-jitsi-meet
+    get_url:
+      url: https://github.com/jitsi/docker-jitsi-meet/archive/refs/tags/stable-5870.tar.gz
+      dest: "/home/"
+    register: res
+
+  - debug:
+      var: res.dest
+
+  - name: Extract archive docker-jitsi-meet-stable-5870.tar.gz
+    unarchive:
+      src: /home/docker-jitsi-meet-stable-5870.tar.gz
+      dest: /home/
+      remote_src: true
+
+  - name: Stat check docker-jitsi-meet-stable-5870
+    stat:
+      path: /home/docker-jitsi-meet-stable-5870/
+    register: stat_result
+
+  - name: Move docker-jitsi-meet-stable-5870 to docker-jitsi-meet
+    command: mv /home/docker-jitsi-meet-stable-5870/ /home/docker-jitsi-meet
+    when: stat_result.stat.exists == True

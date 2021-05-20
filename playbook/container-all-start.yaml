@@ -1,0 +1,7 @@
+---
+- hosts: jitsi
+  become: true
+  tasks:
+  
+    - name: Start all container on host
+      shell: docker start $(docker ps -a -q)

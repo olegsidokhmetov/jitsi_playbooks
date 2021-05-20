@@ -1,0 +1,360 @@
+---
+- hosts: jitsi
+  become: true
+  vars:
+    docker_compose_version: "1.29.2"
+  tasks:
+
+  - name: Update apt cache
+    apt: update_cache=yes cache_valid_time=3600
+
+  - name: Upgrade all apt packages
+    apt: upgrade=dist
+
+  - name: Install dependencies
+    apt:
+      name: "{{ packages }}"
+      state: present
+      update_cache: true
+    vars:
+      packages:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - gnupg-agent
+
+  - name: Add an apt signing key for Docker
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+  - name: Add apt repository for stable version
+    apt_repository:
+      repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+      state: present
+      update_cache: true
+
+  - name: Install Docker
+    apt:
+      name: "{{ packages }}"
+      state: present
+      update_cache: true
+    vars:
+      packages:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+
+  - name: Add remote "root" user to "docker" group
+    user:
+      name: "root"
+      group: docker
+      append: true
+
+  - name: Download docker-compose {{ docker_compose_version }}
+    get_url:
+      url: https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-Linux-x86_64
+      dest: ~/docker-compose
+      mode: '+x'
+
+  - name: Check docker-compose exists
+    stat: path=~/docker-compose
+    register: docker_compose
+
+  - name: Move docker-compose to /usr/local/bin/docker-compose
+    command: mv ~/docker-compose /usr/local/bin/docker-compose
+    when: docker_compose.stat.exists
+
+  - name: Download Files docker-jitsi-meet
+    get_url:
+      url: https://github.com/jitsi/docker-jitsi-meet/archive/refs/tags/stable-5870.tar.gz
+      dest: "/home/"
+    register: res
+
+  - debug:
+      var: res.dest
+
+  - name: Extract archive docker-jitsi-meet-stable-5870.tar.gz
+    unarchive:
+      src: /home/docker-jitsi-meet-stable-5870.tar.gz
+      dest: /home/
+      remote_src: true
+
+  - name: Stat check docker-jitsi-meet-stable-5870
+    stat:
+      path: /home/docker-jitsi-meet-stable-5870/
+    register: stat_result
+
+  - name: Move docker-jitsi-meet-stable-5870 to docker-jitsi-meet
+    command: mv /home/docker-jitsi-meet-stable-5870/ /home/docker-jitsi-meet
+    when: stat_result.stat.exists == True
+
+  - name: Copy files env.example to .env
+    copy:
+      src: /home/docker-jitsi-meet/env.example
+      dest: /home/docker-jitsi-meet/.env
+      remote_src: true
+
+  - name: Run script gen-passwords.sh on the remote node
+    shell: /home/docker-jitsi-meet/gen-passwords.sh
+
+  - name: Ansible multiple replace in file .env
+    replace:
+      path: "{{ item.path }}"
+      regexp: "{{ item.regexp }}"
+      replace: "{{ item.replace }}"
+    with_items:
+      - {path: '/home/docker-jitsi-meet/.env', regexp: 'HTTP_PORT=8000', replace: 'HTTP_PORT=80'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: 'HTTPS_PORT=8443', replace: 'HTTPS_PORT=443'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: 'UTC', replace: 'Europe/Madrid'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#PUBLIC_URL=https://meet.example.com', replace: 'PUBLIC_URL=https://185.139.68.189'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#DOCKER_HOST_ADDRESS=192.168.1.1', replace: 'DOCKER_HOST_ADDRESS=172.17.0.1'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#ENABLE_LOBBY=1', replace: 'ENABLE_LOBBY=1'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#ENABLE_PREJOIN_PAGE=0', replace: 'ENABLE_PREJOIN_PAGE=1'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#ENABLE_WELCOME_PAGE=1', replace: 'ENABLE_WELCOME_PAGE=1'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#ENABLE_NOISY_MIC_DETECTION=1', replace: 'ENABLE_NOISY_MIC_DETECTION=1'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#ENABLE_AUTH=1', replace: 'ENABLE_AUTH=1'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#ENABLE_GUESTS=1', replace: 'ENABLE_GUESTS=1'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#AUTH_TYPE=internal', replace: 'AUTH_TYPE=internal'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: 'XMPP_MUC_MODULES=', replace: 'XMPP_MUC_MODULES=muc_restrict_rooms_exec'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '#ENABLE_HTTP_REDIRECT=1', replace: 'ENABLE_HTTP_REDIRECT=1'}
+      - {path: '/home/docker-jitsi-meet/.env', regexp: '# ENABLE_HSTS=1', replace: 'ENABLE_HSTS=1'}
+
+  - name: Create multiple directory .jitsi-meet-cfg/{web/letsencrypt,transcripts,prosody/config,prosody/prosody-plugins-custom,jicofo,jvb,jigasi,jibri}
+    file:
+      path: "{{ item }}"
+      state: directory
+    with_items:
+      - '/root/.jitsi-meet-cfg'
+      - '/root/.jitsi-meet-cfg/jibri'
+      - '/root/.jitsi-meet-cfg/jicofo'
+      - '/root/.jitsi-meet-cfg/jigasi'
+      - '/root/.jitsi-meet-cfg/jvb'
+      - '/root/.jitsi-meet-cfg/prosody'
+      - '/root/.jitsi-meet-cfg/prosody/config'
+      - '/root/.jitsi-meet-cfg/prosody/prosody-plugins-custom'
+      - '/root/.jitsi-meet-cfg/transcripts'
+      - '/root/.jitsi-meet-cfg/web'
+      - '/root/.jitsi-meet-cfg/web/letsencrypt'
+
+  - name: Install pip3
+    apt: name=python3-pip state=present
+
+  - name: Pip install Docker SDK for Python and docker-compose
+    pip:
+      name:
+        - docker
+        - docker-compose
+
+  - name: Creating a new file "mod_muc_restrict_rooms_exec.lua" with configuration, in /root/.jitsi-meet-cfg/prosody/prosody-plugins-custom
+    copy:
+      dest: "/root/.jitsi-meet-cfg/prosody/prosody-plugins-custom/mod_muc_restrict_rooms_exec.lua"
+      content: |
+         local st = require "util.stanza";
+         local jid = require "util.jid";
+         local nodeprep = require "util.encodings".stringprep.nodeprep;
+          
+         local rooms = module:shared "muc/rooms";
+         if not rooms then
+                 module:log("error", "This module only works on MUC components!");
+                 return;
+         end
+          
+         local restrict_patterns = module:get_option("muc_restrict_matching", {});
+         local restrict_excepts = module:get_option_set("muc_restrict_exceptions", {});
+         local restrict_allow_admins = module:get_option_boolean("muc_restrict_allow_admins", false);
+         local restrict_executable = module:get_option_string("muc_restrict_executable", "/bin/false");
+         local restrict_executable_reason = module:get_option_string("muc_restrict_executable_reason", "Room is not in list of allowed rooms obtained from executable.");
+          
+         local function is_restricted(room, who)
+             -- If admins can join prohibited rooms, we allow them to
+             if restrict_allow_admins and usermanager.is_admin(who, module.host) then
+                 module:log("debug", "Admins are allowed to enter restricted rooms (%s on %s)", who, room)
+                 return nil;
+             end
+          
+             -- Don't evaluate exceptions
+             if restrict_excepts:contains(room) then
+                 module:log("debug", "Room %s is amongst restriction exceptions", room)
+                 return nil;
+             end
+          
+             -- Evaluate regexps of restricted patterns
+                 for pattern,reason in pairs(restrict_patterns) do
+                         if room:match(pattern) then
+                     module:log("debug", "Room %s is restricted by pattern %s, user %s is not allowed to join (%s)", room, pattern, who, reason)
+                                 return reason;
+                         end
+                 end
+          
+                 -- Get list of allowed chat rooms from external executable
+             local executable = assert(io.popen(restrict_executable, 'r'))
+             local output = executable:read('*all')
+             executable:close()
+          
+                 lines = {}
+                 for s in output:gmatch("[^\r\n]+") do
+                         table.insert(lines, s)
+                 end
+          
+                 for i, token in ipairs(lines) do
+                         if string.lower(token) == room then
+                                 return nil
+                         end
+                         if string.find(string.lower(room),string.lower(token)) then
+                                 module:log("debug","Room %s permitida",room)
+                                 return nil
+                         end
+                 end
+          
+                 module:log("debug", "Room %s is not in list of allowed rooms obtained from executable: %s", room, restrict_executable)
+                 return restrict_executable_reason
+         end
+          
+         module:hook("presence/full", function(event)
+                 local stanza = event.stanza;
+          
+                 if stanza.name == "presence" and stanza.attr.type == "unavailable" then   -- Leaving events get discarded
+                         return;
+                 end
+          
+             -- Get the room
+             local room = jid.split(stanza.attr.to);
+                 if not room then return; end
+          
+             -- Get who has tried to join it
+             local who = jid.bare(stanza.attr.from)
+          
+             -- Checking whether room is restricted
+             local check_restricted = is_restricted(room, who)
+                 if check_restricted ~= nil then
+                         event.allowed = false;
+                         event.stanza.attr.type = 'error';
+                     return event.origin.send(st.error_reply(event.stanza, "cancel", "forbidden", "You're not allowed to enter this room: " .. check_restricted));
+                 end
+           end, 10);
+
+  - name: Creates directory "custom_prosody_plugins"
+    file:
+      path: /root/.jitsi-meet-cfg/prosody/config/data/custom_prosody_plugins/
+      state: directory
+
+  - name: Creating a new file "mod_muc_restrict_rooms_exec.sh" with configuration, in /root/.jitsi-meet-cfg/prosody/config/data/custom_prosody_plugins
+    copy:
+      dest: "/root/.jitsi-meet-cfg/prosody/config/data/custom_prosody_plugins/mod_muc_restrict_rooms_exec.sh"
+      content: |
+          #!/bin/sh
+          
+          # LDAP
+          #for i in $(ldapsearch -z 0 -H ldap://x.x.x.x:389 -D "usuario" -w contrasenya -b "ou=CIM,dc=intranet,dc=cliente,dc=net" "(&(memberOf=cn=grpjitsi,ou=grups_globals_acces,dc=intranet,dc=cliente,dc=net))" mail |grep 'mail:'|awk '{print $2}');
+          #do
+          #echo -n $i | md5sum | awk '{print $1}';
+          ## echo $i | cut -d '@' -f1
+          #done
+          # SALAS FIJAS
+          echo QUERSYSTEM
+
+  - name: Set executable for file "mod_muc_restrict_rooms_exec.sh"
+    file:
+      dest: /root/.jitsi-meet-cfg/prosody/config/data/custom_prosody_plugins/mod_muc_restrict_rooms_exec.sh
+      mode: '+x'
+
+  - name: Add new line before "Component "focus. .Env.XMPP_DOMAIN" in file "jitsi-meet.cfg.lua"
+    lineinfile:
+      path: /home/docker-jitsi-meet/prosody/rootfs/defaults/conf.d/jitsi-meet.cfg.lua
+      insertbefore: 'Component "focus.'
+      line: 'muc_restrict_executable = "/config/data/custom_prosody_plugins/mod_muc_restrict_rooms_exec.sh"'
+      state: present
+    register: lineinfileexample
+
+  - name: Add new line "build prosody" in file docker-compose.yml
+    lineinfile:
+       path: /home/docker-jitsi-meet/docker-compose.yml
+       insertafter: "image: jitsi/prosody:stable-5870"
+       line: "        build: ./prosody"
+       state: present
+    register: lineinfileexample
+
+  - name: Replace line "image jitsi/prosody:stable-5870"
+    replace:
+       path: "{{ item.path }}"
+       regexp: "{{ item.regexp }}"
+       replace: "{{ item.replace }}"
+    with_items:
+       - {path: '/home/docker-jitsi-meet/docker-compose.yml', regexp: 'image: jitsi/prosody:stable-5870', replace: '#image: jitsi/prosody:stable-5870'}
+
+  - name: Docker-compose UP
+    become: true
+    shell:
+      cmd: "docker-compose up -d"
+      chdir: /home/docker-jitsi-meet/
+
+  - name: Ansible multiple replace in file "interface_config.js"
+    replace:
+      path: "{{ item.path }}"
+      regexp: "{{ item.regexp }}"
+      replace: "{{ item.replace }}"
+    with_items:
+      - {path: '/root/.jitsi-meet-cfg/web/interface_config.js', regexp: "DEFAULT_LOCAL_DISPLAY_NAME: 'me',", replace: "DEFAULT_LOCAL_DISPLAY_NAME: 'Yo',"}
+      - {path: '/root/.jitsi-meet-cfg/web/interface_config.js', regexp: "DEFAULT_LOGO_URL: 'images/watermark.svg',", replace: "DEFAULT_LOGO_URL: 'images/watermark.png',"}
+      - {path: '/root/.jitsi-meet-cfg/web/interface_config.js', regexp: "DEFAULT_REMOTE_DISPLAY_NAME: 'Fellow Jitster',", replace: "DEFAULT_REMOTE_DISPLAY_NAME: 'Invitado',"}
+      - {path: '/root/.jitsi-meet-cfg/web/interface_config.js', regexp: "DEFAULT_WELCOME_PAGE_LOGO_URL: 'images/watermark.svg',", replace: "DEFAULT_WELCOME_PAGE_LOGO_URL: 'images/watermark.png',"}
+
+  - name: Get running containers Jitsi
+    docker_host_info:
+      containers: true
+    register: docker_info
+
+  - name: Stop running containers Jitsi
+    docker_container:
+      name: "{{ item }}"
+      state: stopped
+    loop: "{{ docker_info.containers | map(attribute='Id') | list }}"
+
+  - name: Remove Stoped docker containers Jitsi
+    shell: |
+       docker rm $(docker ps -a -q);
+    when: docker_info.containers != 0
+
+  - name: Docker-compose build
+    shell:
+      cmd: docker-compose build
+      chdir: /home/docker-jitsi-meet/
+
+  - name: Docker-compose UP
+    shell:
+      cmd: "docker-compose up -d"
+      chdir: /home/docker-jitsi-meet/
+
+  - name: Create Portainer container
+    docker_container:
+      name: portainer
+      image: portainer/portainer-ce
+      state: started
+      recreate: true
+      restart_policy: always
+      published_ports:
+        - "8000:8000"
+        - "9000:9000"
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - portainer_data:/data
+
+  - name: Creates directory /home/logo/
+    become: true
+    file:
+      path: /home/logo/
+      state: directory
+
+  - name: Download quersystem logo.png
+    become: true
+    get_url:
+      url: https://quersystem.com/wp-content/uploads/2021/02/quersystem-logo.png
+      dest: /home/logo/watermark.png
+
+  - name: Copy file into existing container at docker-jitsi-meet_web_1:/usr/share/jitsi-meet/images/watermark.png
+    shell: docker cp /home/logo/watermark.png docker-jitsi-meet_web_1:/usr/share/jitsi-meet/images/watermark.png
+
+  - name: Enter into a running container "docker-jitsi-meet_prosody_1" and run a command
+    command: docker exec docker-jitsi-meet_prosody_1 prosodyctl --config /config/prosody.cfg.lua register Oleg meet.jitsi QUERSYSTEM777

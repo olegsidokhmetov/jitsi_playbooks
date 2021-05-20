@@ -46,5 +46,10 @@
 [jitsi]
 185.139.68.189
 
+[VideoBridges]
+185.188.183.74
+
 [jitsi:vars]
 ansible_python_interpreter=/usr/bin/python3
+
+

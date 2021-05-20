@@ -1,0 +1,10 @@
+---
+- hosts: jitsi
+  become: true
+  tasks:
+
+    - name: Docker-compose build
+      become: true
+      shell:
+        cmd: "docker-compose up -d"
+        chdir: /home/docker-jitsi-meet/

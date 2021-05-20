@@ -1,0 +1,27 @@
+---
+- hosts: jitsi
+  tasks:
+
+     - name: Add new line "build prosody"
+       lineinfile:
+          path: /home/docker-jitsi-meet/docker-compose.yml
+          insertafter: "image: jitsi/jvb:latest"
+          line: "        build: ./jvb"
+          state: present
+       register: lineinfileexample
+
+     - name: Replace line "image jitsi/jvb:latest"
+       replace:
+          path: "{{ item.path }}"
+          regexp: "{{ item.regexp }}"
+          replace: "{{ item.replace }}"
+       with_items:
+          - {path: '/home/docker-jitsi-meet/docker-compose.yml', regexp: 'image: jitsi/jvb:latest', replace: '#image: jitsi/jvb:latest'}
+
+     - name: Add new line jvb2 (command insertbefore)
+       lineinfile:
+          path: /home/docker-jitsi-meet/docker-compose.yml
+          insertbefore: "#image: jitsi/jvb:latest"
+          line: "        jvb2:"
+          state: present
+       register: lineinfileexample

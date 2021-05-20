@@ -1,0 +1,12 @@
+---
+- hosts: jitsi
+  become: true
+  tasks:
+ 
+    - name: Add new line after muc_room_default_public_jids = true' in file "jitsi-meet.cfg.lua"
+      lineinfile:
+        path: /home/docker-jitsi-meet/prosody/rootfs/defaults/conf.d/jitsi-meet.cfg.lua
+        insertbefore: 'Component "focus.'
+        line: 'muc_restrict_executable = "/config/data/custom_prosody_plugins/mod_muc_restrict_rooms_exec.sh"'
+        state: present
+      register: lineinfileexample

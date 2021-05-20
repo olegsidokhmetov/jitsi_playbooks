@@ -1,0 +1,9 @@
+---
+- hosts: jitsi
+  become: true
+  tasks:
+
+     - name: Creates directory
+       file:
+          path: /root/.jitsi-meet-cfg/prosody/config/data/custom_prosody_plugins/
+          state: directory

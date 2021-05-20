@@ -1,0 +1,11 @@
+---
+- hosts: jitsi
+  tasks:
+
+     - name: Add new line build prosody
+       lineinfile:
+          path: /home/docker-jitsi-meet/docker-compose.yml
+          insertbefore: "#image: jitsi/prosody:latest"
+          line: "        jvb2:"
+          state: present
+       register: lineinfileexample

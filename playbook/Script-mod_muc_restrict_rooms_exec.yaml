@@ -1,0 +1,20 @@
+---
+- hosts: jitsi
+  become: true
+  tasks:
+  
+  - name: Creating a new file "mod_muc_restrict_rooms_exec.sh" with configuration, in /root/.jitsi-meet-cfg/prosody/config/data/custom_prosody_plugins
+    copy:
+      dest: "/root/.jitsi-meet-cfg/prosody/config/data/custom_prosody_plugins/mod_muc_restrict_rooms_exec.sh"
+      content: |
+          #!/bin/sh
+          
+          # LDAP
+          #for i in $(ldapsearch -z 0 -H ldap://172.16.12.2:389 -w ******** -D "extquer" -b "ou=CIM,dc=intranet,dc=conselldemallorca,dc=net" "(&(memberOf=cn=grpjitsi,ou=grups_globals_acces,dc=intranet,dc=conselldemallorca,dc=net))" mail |grep 'mail:'|awk '{print $2}');
+          #do
+          #echo -n $i | md5sum | awk '{print $1}';
+          ## echo $i | cut -d '@' -f1
+          #done
+          # SALAS FIJAS
+          echo QUERSYSTEM
+          ...

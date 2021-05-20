@@ -1,0 +1,9 @@
+---
+- hosts: jitsi
+  become: true
+  tasks:
+  
+  - name: Set permissions for file "mod_muc_restrict_rooms_exec.sh"
+    file:
+      dest: /root/.jitsi-meet-cfg/prosody/config/data/custom_prosody_plugins/mod_muc_restrict_rooms_exec.sh
+      mode: '+x'

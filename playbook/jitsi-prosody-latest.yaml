@@ -1,0 +1,11 @@
+---
+- hosts: jitsi
+  tasks:
+
+    - name: Ansible multiple replace in file docker-compose
+      replace:
+        path: "{{ item.path }}"
+        regexp: "{{ item.regexp }}"
+        replace: "{{ item.replace }}"
+      with_items:
+        - {path: '/home/docker-jitsi-meet/docker-compose.yml', regexp: 'image: jitsi/prosody:latest', replace: '#image: jitsi/prosody:latest'}

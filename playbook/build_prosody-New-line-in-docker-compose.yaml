@@ -1,0 +1,19 @@
+---
+- hosts: jitsi
+  tasks:
+
+  - name: Add new line "build prosody"
+    lineinfile:
+       path: /home/docker-jitsi-meet/docker-compose.yml
+       insertafter: "image: jitsi/prosody:latest"
+       line: "        build: ./prosody"
+       state: present
+    register: lineinfileexample
+
+  - name: Replace line "image  jitsi/prosody:latest:"
+    replace:
+       path: "{{ item.path }}"
+       regexp: "{{ item.regexp }}"
+       replace: "{{ item.replace }}"
+    with_items:
+       - {path: '/home/docker-jitsi-meet/docker-compose.yml', regexp: 'image: jitsi/prosody:latest', replace: '#image: jitsi/prosody:latest'}
