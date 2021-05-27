@@ -1,13 +1,13 @@
 ---
-- hosts: VideoBridges #185.188.183.74
+- hosts: VideoBridges
   become: true
   tasks:
-  
+
   - name: Creates directory /home/VideoBridges/
     file:
       path: /home/VideoBridges/
       state: directory	
-  
+
   - name: Creating a file with configuration 
     copy:
       dest: "/home/VideoBridges/docker-compose.yml"

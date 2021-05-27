@@ -43,13 +43,22 @@
 #db-[99:101]-node.example.com
 
 
-[jitsi]
-185.139.68.189
 
-[VideoBridges]
-185.188.183.74
+[jitsi_app]
+jitsi ansible_host=185.139.68.189
 
-[jitsi:vars]
+[videobridge_server]
+videobridge ansible_host=46.17.104.103
+
+[Jitsi_Stack]
+jitsi
+videobridge
+
+[jitsi_app:vars]
 ansible_python_interpreter=/usr/bin/python3
 
+[videobridge_server:vars]
+ansible_python_interpreter=/usr/bin/python3
 
+#[Jitsi_Stack]
+#ansible_python_interpreter=/usr/bin/python3

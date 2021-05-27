@@ -1,0 +1,38 @@
+---
+- hosts: Jitsi_Stack
+  tasks:
+
+    - name: Add new lines to docker-compose.yml (jitsi server)
+      lineinfile:
+         path: /home/docker-jitsi-meet/docker-compose.yml
+         insertafter: "'5280'"
+         line: "{{ item }}"
+         state: present
+      with_items:
+         - "            - '5280:5280'"
+         - "            - '5347:5347'"
+         - "            - '5222:5222'"
+         - "         ports:"
+      register: lineinfileexample
+      when: inventory_hostname == "jitsi"
+
+    - name: Replace line  - "         ports:" in file "/home/docker-jitsi-meet/docker-compose.yml"
+      replace:
+        path: "{{ item.path }}"
+        regexp: "{{ item.regexp }}"
+        replace: "{{ item.replace }}"
+      with_items:
+        - {path: '/home/docker-jitsi-meet/docker-compose.yml', regexp: '         ports:', replace: '        ports:'}
+      when: inventory_hostname == "jitsi"
+
+    - name: Docker-compose build
+      shell:
+        cmd: docker-compose build
+        chdir: /home/docker-jitsi-meet/
+      when: inventory_hostname == "jitsi"
+
+    - name: Docker-compose UP
+      shell:
+        cmd: "docker-compose up -d"
+        chdir: /home/docker-jitsi-meet/
+      when: inventory_hostname == "jitsi"

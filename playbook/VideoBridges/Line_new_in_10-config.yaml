@@ -1,0 +1,13 @@
+---
+- hosts: Jitsi_Stack
+  tasks:
+
+    - name: Add new line  in file "10-config"
+      lineinfile:
+        path: /home/docker-jitsi-meet/prosody/rootfs/etc/cont-init.d/10-config
+        insertafter: '^prosodyctl --config \$PROSODY_CFG register \$JICOFO_AUTH_USER \$XMPP_AUTH_DOMAIN \$JICOFO_AUTH_PASSWORD'
+        regexp: "prosodyctl --config $PROSODY_CFG register $JICOFO_AUTH_USER $XMPP_AUTH_DOMAIN $JICOFO_AUTH_PASSWORD"
+        line: "prosodyctl --config $PROSODY_CFG register JVB2 $XMPP_AUTH_DOMAIN $JVB_AUTH_PASSWORD"
+        state: present
+      register: lineinfileexample
+      when: inventory_hostname == "jitsi"

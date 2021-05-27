@@ -1,0 +1,21 @@
+---
+- hosts: Jitsi_Stack
+  tasks:
+
+    - name: Add new ip address in file /etc/hosts (jitsi server)
+      lineinfile:
+        path: /etc/hosts
+        insertafter: ".*127.0.0.1"
+        line: "46.17.104.103   kyryap.example.com kyryap"
+        state: present
+      register: lineinfileexample
+      when: inventory_hostname == "jitsi"
+
+    - name: Add new ip address in file /etc/hosts (videobridge server)
+      lineinfile:
+        path: /etc/hosts
+        insertafter: ".*127.0.0.1"
+        line: "185.139.68.189  jitsi-test.ru jitsi-test"
+        state: present
+      register: lineinfileexample
+      when: inventory_hostname == "videobridge"

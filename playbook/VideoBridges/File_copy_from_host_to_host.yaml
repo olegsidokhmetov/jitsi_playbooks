@@ -1,0 +1,22 @@
+---
+- hosts: Jitsi_Stack
+  gather_facts: yes
+  tasks:
+
+    - name: Here we are displaying the inventory_hostname values.
+      debug:
+         msg: "inventory_hostname = {{ inventory_hostname }}"
+
+    - name: fetch /home/docker-jitsi-meet/.env
+      run_once: true
+      fetch:
+        src: /home/docker-jitsi-meet/.env
+        dest: /home/
+        flat: true
+      when: inventory_hostname == "jitsi"
+
+    - name: Copy the file from master to videobridge
+      copy:
+        src: /home/.env
+        dest: /home/.env
+      when: inventory_hostname == "videobridge"
